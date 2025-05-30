@@ -11,6 +11,13 @@ const neo4j = require('neo4j-driver');
 // Importar las rutas de los modelos
 const paisRoutes = require('./routes/paisRoutes');
 const ciudadRoutes = require('./routes/ciudadRoutes');
+const sitioRoutes = require('./routes/sitioRoutes');
+const platoRoutes = require('./routes/platoRoutes');
+const famosoRoutes = require('./routes/famosoRoutes');
+const personajeRoutes = require('./routes/personajeRoutes');
+const usuarioRoutes = require('./routes/usuarioRoutes');
+const visitaRoutes = require('./routes/visitaRoutes');
+const tagRoutes = require('./routes/tagRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +29,13 @@ app.use(bodyParser.json());
 // Configuración de las rutas de la API
 app.use('/api/paises', paisRoutes);
 app.use('/api/ciudades', ciudadRoutes);
+app.use('/api/sitios', sitioRoutes);
+app.use('/api/platos', platoRoutes);
+app.use('/api/famosos', famosoRoutes);
+app.use('/api/personajes', personajeRoutes);
+app.use('/api/usuarios', usuarioRoutes);
+app.use('/api/visitas', visitaRoutes);
+app.use('/api/tags', tagRoutes);
 
 // Conexión a la base de datos Neo4j
 const driver = neo4j.driver(
