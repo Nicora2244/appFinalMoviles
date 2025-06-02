@@ -4,16 +4,20 @@
  * nuevos registros de famosos asociados a una ciudad.
  */
 
-const { driver } = require('../app');
-const session = driver.session();
+const driver = require('../neo4j'); 
 
 /**
  * Obtiene todos los nodos de tipo "Famoso" de la base de datos.
  * @returns {Promise<Array>} Lista de famosos.
  */
 async function getAllFamosos() {
-  const result = await session.run(`MATCH (f:Famoso) RETURN f`);
-  return result.records.map(r => r.get('f').properties);
+  const session = driver.session();
+  try {
+    const result = await session.run(`MATCH (f:Famoso) RETURN f`);
+    return result.records.map(r => r.get('f').properties);
+  } finally {
+    await session.close();
+  }
 }
 
 /**
@@ -22,19 +26,22 @@ async function getAllFamosos() {
  * @returns {Promise<Object>} El famoso creado.
  */
 async function createFamoso(data) {
-  const { motivo, ciudadNombre } = data;
-
-  const result = await session.run(
-    `
-    MATCH (c:Ciudad {nombre: $ciudadNombre})
-    CREATE (f:Famoso {motivo: $motivo})
-    -[:ASIGNADO_A]->(c)
-    RETURN f
-    `,
-    { motivo, ciudadNombre }
-  );
-
-  return result.records[0].get('f').properties;
+  const session = driver.session();
+  try {
+    const { motivo, ciudadNombre } = data;
+    const result = await session.run(
+      `
+      MATCH (c:Ciudad {nombre: $ciudadNombre})
+      CREATE (f:Famoso {motivo: $motivo})
+      -[:ASIGNADO_A]->(c)
+      RETURN f
+      `,
+      { motivo, ciudadNombre }
+    );
+    return result.records[0].get('f').properties;
+  } finally {
+    await session.close();
+  }
 }
 
 module.exports = { getAllFamosos, createFamoso };

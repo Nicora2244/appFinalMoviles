@@ -4,16 +4,20 @@
  * nuevos registros de países en la base de datos.
  */
 
-const { driver } = require('../app');
-const session = driver.session();
+const driver = require('../neo4j'); 
 
 /**
  * Obtiene todos los nodos de tipo "Pais" de la base de datos.
  * @returns {Promise<Array>} Lista de países.
  */
 async function getAllPaises() {
-  const result = await session.run(`MATCH (p:Pais) RETURN p`);
-  return result.records.map(r => r.get('p').properties);
+  const session = driver.session();
+  try {
+    const result = await session.run(`MATCH (p:Pais) RETURN p`);
+    return result.records.map(r => r.get('p').properties);
+  } finally {
+    await session.close();
+  }
 }
 
 /**
@@ -22,14 +26,17 @@ async function getAllPaises() {
  * @returns {Promise<Object>} El país creado.
  */
 async function createPais(data) {
-  const { nombre, poblacion, continente } = data;
-
-  const result = await session.run(
-    `CREATE (p:Pais {nombre: $nombre, poblacion: $poblacion, continente: $continente}) RETURN p`,
-    { nombre, poblacion, continente }
-  );
-
-  return result.records[0].get('p').properties;
+  const session = driver.session();
+  try {
+    const { nombre, poblacion, continente } = data;
+    const result = await session.run(
+      `CREATE (p:Pais {nombre: $nombre, poblacion: $poblacion, continente: $continente}) RETURN p`,
+      { nombre, poblacion, continente }
+    );
+    return result.records[0].get('p').properties;
+  } finally {
+    await session.close();
+  }
 }
 
 module.exports = { getAllPaises, createPais };

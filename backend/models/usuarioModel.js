@@ -4,16 +4,20 @@
  * nuevos registros de usuarios en la base de datos.
  */
 
-const { driver } = require('../app');
-const session = driver.session();
+const driver = require('../neo4j'); 
 
 /**
  * Obtiene todos los nodos de tipo "Usuario" de la base de datos.
  * @returns {Promise<Array>} Lista de usuarios.
  */
 async function getAllUsuarios() {
-  const result = await session.run(`MATCH (u:Usuario) RETURN u`);
-  return result.records.map(r => r.get('u').properties);
+  const session = driver.session();
+  try {
+    const result = await session.run(`MATCH (u:Usuario) RETURN u`);
+    return result.records.map(r => r.get('u').properties);
+  } finally {
+    await session.close();
+  }
 }
 
 /**
@@ -22,21 +26,26 @@ async function getAllUsuarios() {
  * @returns {Promise<Object>} El usuario creado.
  */
 async function createUsuario(data) {
-  const { mail, password, perfil } = data;
+  const session = driver.session();
+  try {
+    const { mail, password, perfil } = data;
 
-  const result = await session.run(
-    `
-    CREATE (u:Usuario {
-      mail: $mail,
-      password: $password,
-      perfil: $perfil
-    })
-    RETURN u
-    `,
-    { mail, password, perfil }
-  );
+    const result = await session.run(
+      `
+      CREATE (u:Usuario {
+        mail: $mail,
+        password: $password,
+        perfil: $perfil
+      })
+      RETURN u
+      `,
+      { mail, password, perfil }
+    );
 
-  return result.records[0].get('u').properties;
+    return result.records[0].get('u').properties;
+  } finally {
+    await session.close();
+  }
 }
 
 module.exports = { getAllUsuarios, createUsuario };

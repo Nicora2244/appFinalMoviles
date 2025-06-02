@@ -4,16 +4,20 @@
  * nuevos registros de tags asociados a un usuario, sitio y personaje.
  */
 
-const { driver } = require('../app');
-const session = driver.session();
+const driver = require('../neo4j'); 
 
 /**
  * Obtiene todos los nodos de tipo "Tag" de la base de datos.
  * @returns {Promise<Array>} Lista de tags.
  */
 async function getAllTags() {
-  const result = await session.run(`MATCH (t:Tag) RETURN t`);
-  return result.records.map(r => r.get('t').properties);
+  const session = driver.session();
+  try {
+    const result = await session.run(`MATCH (t:Tag) RETURN t`);
+    return result.records.map(r => r.get('t').properties);
+  } finally {
+    await session.close();
+  }
 }
 
 /**
@@ -22,27 +26,32 @@ async function getAllTags() {
  * @returns {Promise<Object>} El tag creado.
  */
 async function createTag(data) {
-  const { usuarioMail, sitioNombre, personajeNombre, fechaHora, latitud, longitud } = data;
+  const session = driver.session();
+  try {
+    const { usuarioMail, sitioNombre, personajeNombre, fechaHora, latitud, longitud } = data;
 
-  const result = await session.run(
-    `
-    MATCH (u:Usuario {mail: $usuarioMail}),
-          (s:Sitio {nombre: $sitioNombre}),
-          (p:Personaje {nombre: $personajeNombre})
-    CREATE (t:Tag {
-      fechaHora: $fechaHora,
-      latitud: $latitud,
-      longitud: $longitud
-    })
-    CREATE (u)-[:REGISTRO_TAG]->(t)
-    CREATE (t)-[:EN_SITIO]->(s)
-    CREATE (t)-[:CON_PERSONAJE]->(p)
-    RETURN t
-    `,
-    { usuarioMail, sitioNombre, personajeNombre, fechaHora, latitud, longitud }
-  );
+    const result = await session.run(
+      `
+      MATCH (u:Usuario {mail: $usuarioMail}),
+            (s:Sitio {nombre: $sitioNombre}),
+            (p:Personaje {nombre: $personajeNombre})
+      CREATE (t:Tag {
+        fechaHora: $fechaHora,
+        latitud: $latitud,
+        longitud: $longitud
+      })
+      CREATE (u)-[:REGISTRO_TAG]->(t)
+      CREATE (t)-[:EN_SITIO]->(s)
+      CREATE (t)-[:CON_PERSONAJE]->(p)
+      RETURN t
+      `,
+      { usuarioMail, sitioNombre, personajeNombre, fechaHora, latitud, longitud }
+    );
 
-  return result.records[0].get('t').properties;
+    return result.records[0].get('t').properties;
+  } finally {
+    await session.close();
+  }
 }
 
 module.exports = { getAllTags, createTag };

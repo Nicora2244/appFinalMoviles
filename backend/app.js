@@ -1,12 +1,10 @@
 /**
  * Este archivo configura y levanta un servidor Express para exponer una API REST.
- * Además, establece la conexión con la base de datos Neo4j y exporta el driver y la sesión.
  */
 
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const neo4j = require('neo4j-driver');
 
 // Importar las rutas de los modelos
 const paisRoutes = require('./routes/paisRoutes');
@@ -37,14 +35,6 @@ app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/visitas', visitaRoutes);
 app.use('/api/tags', tagRoutes);
 
-// Conexión a la base de datos Neo4j
-const driver = neo4j.driver(
-  'bolt://localhost:7687',  // Ajustar URL según tu configuración de la nube
-  neo4j.auth.basic('neo4j', 'password') 
-); 
-
-const session = driver.session();
-
 // Ruta de prueba para verificar que la API funciona
 app.get('/', (req, res) => {
   res.send('API de prueba funcionando');
@@ -54,6 +44,3 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });
-
-// Exporta el driver y la sesión de Neo4j para usarlos en otros módulos
-module.exports = { driver, session };

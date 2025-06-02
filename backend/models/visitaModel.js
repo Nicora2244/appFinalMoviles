@@ -4,16 +4,20 @@
  * nuevos registros de visitas asociadas a un usuario y un sitio.
  */
 
-const { driver } = require('../app');
-const session = driver.session();
+const driver = require('../neo4j'); 
 
 /**
  * Obtiene todos los nodos de tipo "Visita" de la base de datos.
  * @returns {Promise<Array>} Lista de visitas.
  */
 async function getAllVisitas() {
-  const result = await session.run(`MATCH (v:Visita) RETURN v`);
-  return result.records.map(r => r.get('v').properties);
+  const session = driver.session();
+  try {
+    const result = await session.run(`MATCH (v:Visita) RETURN v`);
+    return result.records.map(r => r.get('v').properties);
+  } finally {
+    await session.close();
+  }
 }
 
 /**
@@ -22,20 +26,25 @@ async function getAllVisitas() {
  * @returns {Promise<Object>} La visita creada.
  */
 async function createVisita(data) {
-  const { usuarioMail, sitioNombre, fechaHora } = data;
+  const session = driver.session();
+  try {
+    const { usuarioMail, sitioNombre, fechaHora } = data;
 
-  const result = await session.run(
-    `
-    MATCH (u:Usuario {mail: $usuarioMail}), (s:Sitio {nombre: $sitioNombre})
-    CREATE (v:Visita {fechaHora: $fechaHora})
-    CREATE (u)-[:REALIZO_VISITA]->(v)
-    CREATE (v)-[:EN_SITIO]->(s)
-    RETURN v
-    `,
-    { usuarioMail, sitioNombre, fechaHora }
-  );
+    const result = await session.run(
+      `
+      MATCH (u:Usuario {mail: $usuarioMail}), (s:Sitio {nombre: $sitioNombre})
+      CREATE (v:Visita {fechaHora: $fechaHora})
+      CREATE (u)-[:REALIZO_VISITA]->(v)
+      CREATE (v)-[:EN_SITIO]->(s)
+      RETURN v
+      `,
+      { usuarioMail, sitioNombre, fechaHora }
+    );
 
-  return result.records[0].get('v').properties;
+    return result.records[0].get('v').properties;
+  } finally {
+    await session.close();
+  }
 }
 
 module.exports = { getAllVisitas, createVisita };

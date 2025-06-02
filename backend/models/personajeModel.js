@@ -4,16 +4,20 @@
  * nuevos registros de personajes asociados a una ciudad y a un famoso.
  */
 
-const { driver } = require('../app');
-const session = driver.session();
+const driver = require('../neo4j'); 
 
 /**
  * Obtiene todos los nodos de tipo "Personaje" de la base de datos.
  * @returns {Promise<Array>} Lista de personajes.
  */
 async function getAllPersonajes() {
-  const result = await session.run(`MATCH (p:Personaje) RETURN p`);
-  return result.records.map(r => r.get('p').properties);
+  const session = driver.session();
+  try {
+    const result = await session.run(`MATCH (p:Personaje) RETURN p`);
+    return result.records.map(r => r.get('p').properties);
+  } finally {
+    await session.close();
+  }
 }
 
 /**
@@ -22,23 +26,26 @@ async function getAllPersonajes() {
  * @returns {Promise<Object>} El personaje creado.
  */
 async function createPersonaje(data) {
-  const { nombre, tipo, nacimiento, ciudadNombre, motivoFama } = data;
-
-  const result = await session.run(
-    `
-    MATCH (c:Ciudad {nombre: $ciudadNombre}), (f:Famoso {motivo: $motivoFama})
-    CREATE (p:Personaje {
-      nombre: $nombre,
-      tipo: $tipo,
-      nacimiento: $nacimiento
-    })-[:NACIDO_EN]->(c)
-    -[:ASIGNADO_A]->(f)
-    RETURN p
-    `,
-    { nombre, tipo, nacimiento, ciudadNombre, motivoFama }
-  );
-
-  return result.records[0].get('p').properties;
+  const session = driver.session();
+  try {
+    const { nombre, tipo, nacimiento, ciudadNombre, motivoFama } = data;
+    const result = await session.run(
+      `
+      MATCH (c:Ciudad {nombre: $ciudadNombre}), (f:Famoso {motivo: $motivoFama})
+      CREATE (p:Personaje {
+        nombre: $nombre,
+        tipo: $tipo,
+        nacimiento: $nacimiento
+      })-[:NACIDO_EN]->(c)
+      -[:ASIGNADO_A]->(f)
+      RETURN p
+      `,
+      { nombre, tipo, nacimiento, ciudadNombre, motivoFama }
+    );
+    return result.records[0].get('p').properties;
+  } finally {
+    await session.close();
+  }
 }
 
 module.exports = { getAllPersonajes, createPersonaje };
