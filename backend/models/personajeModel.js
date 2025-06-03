@@ -4,7 +4,7 @@
  * nuevos registros de personajes asociados a una ciudad y a un famoso.
  */
 
-const driver = require('../neo4j'); 
+const driver = require('../neo4j');
 
 /**
  * Obtiene todos los nodos de tipo "Personaje" de la base de datos.
@@ -36,8 +36,8 @@ async function createPersonaje(data) {
         nombre: $nombre,
         tipo: $tipo,
         nacimiento: $nacimiento
-      })-[:NACIDO_EN]->(c)
-      -[:ASIGNADO_A]->(f)
+      })-[:NACIDO_EN]->(c),
+      (p)-[:ASIGNADO_A]->(f)
       RETURN p
       `,
       { nombre, tipo, nacimiento, ciudadNombre, motivoFama }
