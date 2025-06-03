@@ -21,24 +21,26 @@ async function getAllPlatos() {
 }
 
 /**
- * Crea un nuevo nodo "Plato" y lo asocia a una ciudad existente.
- * @param {Object} data - Datos del plato (nombre, cocina, ciudadNombre).
+ * Crea un nuevo nodo "Plato" y lo asocia a un sitio existente, incluyendo el precio.
+ * @param {Object} data - Datos del plato (nombre, cocina, sitioNombre, precio).
  * @returns {Promise<Object>} El plato creado.
  */
 async function createPlato(data) {
   const session = driver.session();
   try {
-    const { nombre, cocina, ciudadNombre } = data;
+    const { nombre, cocina, sitioNombre, precio } = data;
     const result = await session.run(
       `
-      MATCH (c:Ciudad {nombre: $ciudadNombre})
+      MATCH (s:Sitio {nombre: $sitioNombre})
       CREATE (p:Plato {
         nombre: $nombre,
-        cocina: $cocina
-      })-[:COMIDA_TIPICA_DE]->(c)
+        cocina: $cocina,
+        precio: $precio
+      })
+      CREATE (p)-[:SE_CONSIGUE_EN]->(s)
       RETURN p
       `,
-      { nombre, cocina, ciudadNombre }
+      { nombre, cocina, sitioNombre, precio }
     );
     return result.records[0].get('p').properties;
   } finally {
